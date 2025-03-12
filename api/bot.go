@@ -21,56 +21,61 @@ const (
 	statusCodeSuccess = 200
 )
 
-// Bot Handles all incoming traffic from webhooks.
+// Bot handles all incoming traffic from webhooks.
 func Bot(w http.ResponseWriter, r *http.Request) {
+	// Extract the bot token from URL path
 	url := r.URL.Path
-
 	split := strings.Split(url, "/")
-	if len(split) < 2 {
-		fmt.Println(w, "url path too short")
-		w.WriteHeader(statusCodeSuccess)
 
+	// Validate URL path
+	if len(split) < 2 {
+		http.Error(w, "URL path too short", http.StatusBadRequest)
 		return
 	}
 
 	botToken := split[len(split)-2]
 
-	bot, _ := gotgbot.NewBot(botToken, &gotgbot.BotOpts{DisableTokenCheck: false})
+	// Create the bot object
+	bot, err := gotgbot.NewBot(botToken, &gotgbot.BotOpts{DisableTokenCheck: false})
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Error creating bot: %v", err), http.StatusInternalServerError)
+		return
+	}
 
-	// Delete the webhook in case token is unauthorized.
+	// Check if the bot token is allowed
 	if lenAllowedTokens > 0 && allowedTokens[0] != "" && !findInStringSlice(allowedTokens, botToken) {
 		_, _ = bot.DeleteWebhook(&gotgbot.DeleteWebhookOpts{DropPendingUpdates: true}) // It doesn't matter if it errors
 		w.WriteHeader(statusCodeSuccess)
 		return
 	}
 
+	// Read and parse the update
 	var update gotgbot.Update
-
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		_, _ = fmt.Fprintf(w, "Error reading request body: %v", err)
-		w.WriteHeader(statusCodeSuccess)
+		http.Error(w, fmt.Sprintf("Error reading request body: %v", err), http.StatusInternalServerError)
 		return
 	}
 
 	err = json.Unmarshal(body, &update)
 	if err != nil {
-		fmt.Println("failed to unmarshal body ", err)
-		w.WriteHeader(statusCodeSuccess)
-
+		http.Error(w, fmt.Sprintf("Error unmarshalling body: %v", err), http.StatusBadRequest)
 		return
 	}
 
+	// Set the bot username
 	bot.Username = split[len(split)-1]
 
+	// Dispatch the update to the appropriate handler
 	err = modules.Dispatcher.ProcessUpdate(bot, &update, map[string]any{})
 	if err != nil {
-		fmt.Printf("error while processing update: %v", err)
+		fmt.Printf("Error while processing update: %v\n", err)
 	}
 
 	w.WriteHeader(statusCodeSuccess)
 }
 
+// Helper function to check if a value is present in a string slice
 func findInStringSlice(slice []string, val string) bool {
 	for _, item := range slice {
 		if item == val {
@@ -79,3 +84,4 @@ func findInStringSlice(slice []string, val string) bool {
 	}
 	return false
 }
+
