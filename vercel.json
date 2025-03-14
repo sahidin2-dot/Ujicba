@@ -1,22 +1,11 @@
 {
-  "build": {
-    "env": {
-      "GO_BUILD_FLAGS": "-ldflags '-s -w'"
-    }
-  },
   "routes": [
-    {
-      "src": "/bot/.*/.*",
-      "dest": "/api/bot.go"
-    },
-    {
-      "src": "/",
-      "dest": "/index.html"
-    }
+    { "src": "/", "dest": "/public/index.html" },
+    { "src": "/api/(.*)", "dest": "/api/$1.go" }
   ],
   "functions": {
-    "api/bot.go": {
-      "maxDuration": 50
+    "api/*.go": {
+      "runtime": "go@1.20"
     }
   }
 }
