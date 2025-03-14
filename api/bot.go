@@ -22,10 +22,9 @@ const (
 )
 
 // Bot handles all incoming traffic from webhooks.
-func Bot(w http.ResponseWriter, r *http.Request) {
-	// Extract the bot token from URL path
-	url := r.URL.Path
-	split := strings.Split(url, "/")
+func Handler(w http.ResponseWriter, r *http.Request) {
+    // ... (kode fungsi tetap sama)
+}
 
 	// Validate URL path
 	if len(split) < 2 {
@@ -77,11 +76,11 @@ func Bot(w http.ResponseWriter, r *http.Request) {
 
 // Helper function to check if a value is present in a string slice
 func findInStringSlice(slice []string, val string) bool {
-	for _, item := range slice {
-		if item == val {
-			return true
-		}
-	}
-	return false
+    for _, item := range slice {
+        if item == val {
+            return true
+        }
+    }
+    return false
 }
 
